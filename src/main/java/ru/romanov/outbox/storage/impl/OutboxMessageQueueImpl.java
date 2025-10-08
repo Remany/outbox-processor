@@ -19,7 +19,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class OutboxMessageQueueImpl implements OutboxMessageQueue {
 
     private final BlockingQueue<OutboxMessageEntity> newMessages;
+
     private final BlockingQueue<OutboxMessageEntity> successQueue;
+
     private final BlockingQueue<OutboxMessageEntity> failureQueue;
 
     public OutboxMessageQueueImpl() {
