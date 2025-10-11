@@ -28,7 +28,7 @@ public class OutboxProcessorImpl implements OutboxProcessor {
     private final OutboxMessageQueue queue;
     private final KafkaTemplateFactory kafkaTemplateFactory;
     private final Executor messagesExecutor;
-    private final OutboxMessageService miniOutboxMessageService;
+    private final OutboxMessageService outboxService;
     private final StreamingProperties properties;
     private final ObjectMapper objectMapper;
 
@@ -111,7 +111,7 @@ public class OutboxProcessorImpl implements OutboxProcessor {
     private void updateStatus(OutboxMessageStatus status) {
         try {
             var successMessage = queue.take(status);
-            miniOutboxMessageService.updateStatus(successMessage, status);
+            outboxService.updateStatus(successMessage, status);
         } catch (InterruptedException e) {
             logErr(e.getMessage());
             Thread.currentThread().interrupt();

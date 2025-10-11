@@ -30,7 +30,6 @@ public class OutboxMessageRepositoryImpl implements OutboxMessageRepository {
     private static final String SELECT_STUCK_MESSAGES_SQL = "SELECT * FROM %s " + "WHERE status IN (:statuses) " + "AND reserved_to < :now " + "LIMIT :limit " + "FOR UPDATE SKIP LOCKED";
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
-
     private final StreamingProperties properties;
 
     @Override

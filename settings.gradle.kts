@@ -1,2 +1,2 @@
-rootProject.name = "transactional-outbox"
+rootProject.name = "outbox-processor"
 
