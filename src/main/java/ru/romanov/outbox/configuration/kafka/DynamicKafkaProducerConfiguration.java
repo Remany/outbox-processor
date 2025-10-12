@@ -8,13 +8,11 @@ import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import ru.romanov.outbox.configuration.EmbeddedStreamingProperties;
+import ru.romanov.outbox.configuration.StreamingProperties;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,11 +20,9 @@ import java.util.Map;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@ConditionalOnProperty(value = {"streaming.embedded.enabled"}, havingValue = "true", matchIfMissing = true)
-@EnableConfigurationProperties({EmbeddedStreamingProperties.class})
 public class DynamicKafkaProducerConfiguration {
 
-    private final EmbeddedStreamingProperties properties;
+    private final StreamingProperties properties;
 
     @Bean
     public Map<String, KafkaTemplate<String, String>> kafkaTemplates() {
@@ -66,7 +62,7 @@ public class DynamicKafkaProducerConfiguration {
             throw new IllegalArgumentException(String.format("No configured kafka properties found for system %s.", kafkaSystem));
         }
 
-        EmbeddedStreamingProperties.DynamicKafka.KafkaSystemProperties config = properties.getKafka()
+        StreamingProperties.DynamicKafka.KafkaSystemProperties config = properties.getKafka()
                 .getSystems()
                 .get(kafkaSystem);
 
