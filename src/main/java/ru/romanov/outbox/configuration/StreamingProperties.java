@@ -33,12 +33,35 @@ public class StreamingProperties {
 
         private Cleanup cleanup = new Cleanup();
 
+        private StatusUpdate statusUpdate = new StatusUpdate();
+
+        private Recovery recovery = new Recovery();
+
         @Getter
         @Setter
         public static class Cleanup {
             private String cron;
             private int daysInterval = 7;
             private int limit = 1000;
+        }
+
+        @Getter
+        @Setter
+        public static class StatusUpdate {
+            private int batchSize = 500;
+            private int flushIntervalMs = 2000;
+            private int maxQueueSize = 10000;
+            private int maxRetries = 3;
+            private int retryDelayMs = 500;
+        }
+
+        @Getter
+        @Setter
+        public static class Recovery {
+            private String cron;
+            private int limit = 1000;
+            private String initialDelay = "60000";
+            private int additionalReserveTime = 30;
         }
     }
 
@@ -106,13 +129,21 @@ public class StreamingProperties {
         @Getter
         @Setter
         public static class Producer {
-            private static final Integer DEFAULT_BATCH_SIZE = 1_000_000;
+            private static final Integer DEFAULT_BATCH_SIZE = 64_000;
 
             private static final Integer DEFAULT_TIMEOUT_MS = 300000;
 
             private Integer batchSize = DEFAULT_BATCH_SIZE;
 
             private Integer deliveryTimeoutMs = DEFAULT_TIMEOUT_MS;
+
+            private boolean enableIdempotenceConfig = true;
+
+            private String acks = "all";
+
+            private Integer maxInFlightRequests = 5;
+
+            private Integer lingerMs = 20;
         }
     }
 }

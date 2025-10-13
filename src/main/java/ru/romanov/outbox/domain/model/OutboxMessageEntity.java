@@ -1,6 +1,5 @@
 package ru.romanov.outbox.domain.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,8 +19,8 @@ public class OutboxMessageEntity {
     private UUID id;
     private String key;
     private String topic;
-    private JsonNode headers;
-    private JsonNode payload;
+    private String headers;
+    private String payload;
     private String kafkaSystem;
     private OutboxMessageStatus status;
     private LocalDateTime reservedTo;

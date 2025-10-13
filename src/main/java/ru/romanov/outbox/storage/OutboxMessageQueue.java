@@ -10,7 +10,4 @@ public interface OutboxMessageQueue {
 
     OutboxMessageEntity take(OutboxMessageStatus status) throws InterruptedException;
 
-    void markSuccess(OutboxMessageEntity message);
-
-    void markFailure(OutboxMessageEntity message);
 }

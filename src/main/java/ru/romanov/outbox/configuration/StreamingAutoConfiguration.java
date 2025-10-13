@@ -1,6 +1,8 @@
 package ru.romanov.outbox.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -18,13 +20,16 @@ import ru.romanov.outbox.domain.repository.OutboxMessageRepository;
 import ru.romanov.outbox.domain.repository.impl.OutboxMessageRepositoryImpl;
 import ru.romanov.outbox.facade.StreamingFacade;
 import ru.romanov.outbox.facade.impl.OutboxStreamingFacade;
+import ru.romanov.outbox.metric.OutboxMetrics;
 import ru.romanov.outbox.processing.OutboxProcessor;
-import ru.romanov.outbox.processing.impl.OutboxProcessorImpl;
+import ru.romanov.outbox.processing.impl.EventOrientedOutboxProcessorImpl;
 import ru.romanov.outbox.scheduler.OutboxCleanJob;
 import ru.romanov.outbox.scheduler.impl.OutboxCleanJobImpl;
 import ru.romanov.outbox.service.OutboxMessageService;
+import ru.romanov.outbox.service.OutboxMessageStatusService;
 import ru.romanov.outbox.service.OutboxRecoveryService;
 import ru.romanov.outbox.service.impl.OutboxMessageServiceImpl;
+import ru.romanov.outbox.service.impl.OutboxMessageStatusServiceImpl;
 import ru.romanov.outbox.service.impl.StartupOutboxRecoveryService;
 import ru.romanov.outbox.storage.OutboxMessageQueue;
 import ru.romanov.outbox.storage.impl.OutboxMessageQueueImpl;
@@ -61,13 +66,39 @@ public class StreamingAutoConfiguration {
     }
 
     @Bean
-    public OutboxProcessor miniOutboxProcessor(OutboxMessageQueue outboxQueue, KafkaTemplateFactory kafkaTemplateFactory, @Qualifier("messagesExecutor") Executor messagesExecutor, OutboxMessageService service, StreamingProperties properties, ObjectMapper objectMapper) {
-        return new OutboxProcessorImpl(outboxQueue, kafkaTemplateFactory, messagesExecutor, service, properties, objectMapper);
+    @ConditionalOnMissingBean
+    public MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
     }
 
     @Bean
-    public OutboxRecoveryService outboxRecoveryService(OutboxMessageRepository repository, OutboxMessageQueue queue, StreamingProperties properties) {
-        return new StartupOutboxRecoveryService(repository, queue, properties);
+    public OutboxMetrics outboxMetrics(MeterRegistry registry) {
+        return new OutboxMetrics(registry);
+    }
+
+    @Bean
+    public OutboxMessageStatusService outboxMessageStatusService(OutboxMessageRepository repository,
+                                                                 StreamingProperties properties,
+                                                                 MeterRegistry meterRegistry,
+                                                                 @Qualifier("messagesExecutor") Executor messagesExecutor) {
+        return new OutboxMessageStatusServiceImpl(repository, properties, meterRegistry, messagesExecutor);
+    }
+
+    @Bean
+    public OutboxProcessor miniOutboxProcessor(OutboxMessageQueue outboxQueue,
+                                               KafkaTemplateFactory kafkaTemplateFactory,
+                                               @Qualifier("messagesExecutor") Executor messagesExecutor,
+                                               StreamingProperties properties, ObjectMapper objectMapper,
+                                               OutboxMetrics outboxMetrics,
+                                               OutboxMessageStatusService outboxMessageStatusService) {
+        return new EventOrientedOutboxProcessorImpl(outboxQueue, kafkaTemplateFactory, messagesExecutor, properties, objectMapper, outboxMetrics, outboxMessageStatusService);
+    }
+
+    @Bean
+    public OutboxRecoveryService startupOutboxRecoveryService(OutboxMessageRepository repository,
+                                                              OutboxMessageQueue queue,
+                                                              StreamingProperties properties) {
+        return new StartupOutboxRecoveryService(properties, repository, queue);
     }
 
     @Bean
@@ -76,13 +107,16 @@ public class StreamingAutoConfiguration {
     }
 
     @Bean
-    public OutboxMessageService outboxMessageService(StreamingProperties streamingProperties, OutboxMessageRepository repository, OutboxMessageQueue outboxQueue, ObjectMapper objectMapper) {
-        return new OutboxMessageServiceImpl(streamingProperties, repository, outboxQueue, objectMapper);
+    public OutboxMessageService outboxMessageService(StreamingProperties streamingProperties,
+                                                     OutboxMessageRepository repository, OutboxMessageQueue outboxQueue,
+                                                     ObjectMapper objectMapper, OutboxMetrics outboxMetrics) {
+        return new OutboxMessageServiceImpl(streamingProperties, repository, outboxQueue, outboxMetrics, objectMapper);
     }
 
 
     @Bean
-    public OutboxMessageRepository outboxMessageRepository(NamedParameterJdbcTemplate jdbcTemplate, StreamingProperties properties) {
+    public OutboxMessageRepository outboxMessageRepository(NamedParameterJdbcTemplate jdbcTemplate,
+                                                           StreamingProperties properties) {
         return new OutboxMessageRepositoryImpl(jdbcTemplate, properties);
     }
 
@@ -95,7 +129,7 @@ public class StreamingAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(ObjectMapper.class)
+    @ConditionalOnMissingBean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }

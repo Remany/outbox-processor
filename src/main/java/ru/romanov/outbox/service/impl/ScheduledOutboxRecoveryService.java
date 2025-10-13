@@ -1,25 +1,26 @@
 package ru.romanov.outbox.service.impl;
 
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import ru.romanov.outbox.configuration.StreamingProperties;
 import ru.romanov.outbox.domain.repository.OutboxMessageRepository;
 import ru.romanov.outbox.service.OutboxRecoveryService;
 import ru.romanov.outbox.storage.OutboxMessageQueue;
 
-public class StartupOutboxRecoveryService extends OutboxRecoveryService {
+public class ScheduledOutboxRecoveryService extends OutboxRecoveryService {
 
-    public StartupOutboxRecoveryService(StreamingProperties properties,
-                                        OutboxMessageRepository repository,
-                                        OutboxMessageQueue queue) {
+    public ScheduledOutboxRecoveryService(StreamingProperties properties,
+                                          OutboxMessageRepository repository,
+                                          OutboxMessageQueue queue) {
         super(properties, repository, queue);
     }
 
     /* Запрашиваем на старте приложения застрявшие сообщения */
     @Override
     @Transactional
-    @EventListener(ApplicationReadyEvent.class)
+    @Scheduled(
+            cron = "${streaming.outbox.recovery.cron:*/30 * * * * *}",
+            fixedDelayString = "${streaming.outbox.recovery.cron.initial-delay:60000}")
     public void recoverStuckMessages() {
         process();
     }
