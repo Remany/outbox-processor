@@ -37,6 +37,8 @@ public class StreamingProperties {
 
         private Recovery recovery = new Recovery();
 
+        private Scheduled scheduled = new Scheduled();
+
         @Getter
         @Setter
         public static class Cleanup {
@@ -60,8 +62,15 @@ public class StreamingProperties {
         public static class Recovery {
             private String cron;
             private int limit = 1000;
-            private String initialDelay = "60000";
             private int additionalReserveTime = 30;
+        }
+
+        @Getter
+        @Setter
+        public static class Scheduled {
+            private boolean enabled = false;
+            private String delay = "1000";
+            private int limit = 1000;
         }
     }
 

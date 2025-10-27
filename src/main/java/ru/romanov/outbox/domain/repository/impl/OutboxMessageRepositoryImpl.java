@@ -28,6 +28,8 @@ public class OutboxMessageRepositoryImpl implements OutboxMessageRepository {
 
     private static final String DELETE_PROCESSED_MESSAGES_SQL = "DELETE FROM %s " + "WHERE id IN(" + "SELECT id FROM %s " + "WHERE create_time < CURRENT_DATE - :daysInterval " + "AND status = 'SUCCESS' LIMIT :limit FOR UPDATE SKIP LOCKED)";
 
+    private static final String SELECT_NEW_MESSAGES_SQL = "SELECT * FROM %s " + "WHERE status IN (:statuses) " + "LIMIT :limit " + "FOR UPDATE SKIP LOCKED";
+
     private static final String SELECT_STUCK_MESSAGES_SQL = "SELECT * FROM %s " + "WHERE status IN (:statuses) " + "AND reserved_to < :reserved_to " + "LIMIT :limit " + "FOR UPDATE SKIP LOCKED";
 
     private static final String ID_PARAM = "id";
@@ -92,12 +94,25 @@ public class OutboxMessageRepositoryImpl implements OutboxMessageRepository {
     }
 
     @Override
+    public List<OutboxMessageEntity> findNewMessages(Integer limit) {
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue(LIMIT_PARAM, limit)
+                .addValue(STATUSES_PARAM, STUCK_STATUSES);
+
+        return findList(SELECT_NEW_MESSAGES_SQL, params);
+    }
+
+    @Override
     public List<OutboxMessageEntity> findStuckMessages(Integer limit) {
         MapSqlParameterSource params = new MapSqlParameterSource().addValue(RESERVED_TO_PARAM, LocalDateTime.now())
                 .addValue(LIMIT_PARAM, limit)
                 .addValue(STATUSES_PARAM, STUCK_STATUSES);
 
-        return jdbcTemplate.query(String.format(SELECT_STUCK_MESSAGES_SQL, properties.getOutbox()
+        return findList(SELECT_STUCK_MESSAGES_SQL, params);
+    }
+
+    private List<OutboxMessageEntity> findList(String sqlQuery, MapSqlParameterSource params) {
+        return jdbcTemplate.query(String.format(sqlQuery, properties.getOutbox()
                 .getTableName()), params, (rs, rowNum) -> OutboxMessageEntity.builder()
                 .id(rs.getObject(ID_PARAM, UUID.class))
                 .key(rs.getString(KEY_PARAM))

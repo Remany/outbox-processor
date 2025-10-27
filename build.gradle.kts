@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "ru.romanov"
-version = "1.0.21"
+version = "1.0.23"
 
 repositories {
     mavenLocal()
@@ -84,7 +84,7 @@ publishing {
                 artifact(jarFile)
                 groupId = "ru.romanov"
                 artifactId = jarBaseName
-                version = "1.0.21"
+                version = "1.0.23"
 
                 pom.withXml {
                     asNode().children().clear()

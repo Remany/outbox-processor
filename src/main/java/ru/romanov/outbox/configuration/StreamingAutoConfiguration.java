@@ -21,15 +21,16 @@ import ru.romanov.outbox.domain.repository.impl.OutboxMessageRepositoryImpl;
 import ru.romanov.outbox.facade.StreamingFacade;
 import ru.romanov.outbox.facade.impl.OutboxStreamingFacade;
 import ru.romanov.outbox.metric.OutboxMetrics;
-import ru.romanov.outbox.processing.OutboxProcessor;
+import ru.romanov.outbox.processing.AbstractOutboxProcessor;
 import ru.romanov.outbox.processing.impl.EventOrientedOutboxProcessorImpl;
+import ru.romanov.outbox.processing.impl.ScheduledOutboxProcessor;
 import ru.romanov.outbox.scheduler.OutboxCleanJob;
 import ru.romanov.outbox.scheduler.impl.OutboxCleanJobImpl;
 import ru.romanov.outbox.service.OutboxMessageService;
 import ru.romanov.outbox.service.OutboxMessageStatusService;
-import ru.romanov.outbox.service.OutboxRecoveryService;
 import ru.romanov.outbox.service.impl.OutboxMessageServiceImpl;
 import ru.romanov.outbox.service.impl.OutboxMessageStatusServiceImpl;
+import ru.romanov.outbox.service.impl.ScheduledOutboxRecoveryService;
 import ru.romanov.outbox.service.impl.StartupOutboxRecoveryService;
 import ru.romanov.outbox.storage.OutboxMessageQueue;
 import ru.romanov.outbox.storage.impl.OutboxMessageQueueImpl;
@@ -85,20 +86,47 @@ public class StreamingAutoConfiguration {
     }
 
     @Bean
-    public OutboxProcessor miniOutboxProcessor(OutboxMessageQueue outboxQueue,
-                                               KafkaTemplateFactory kafkaTemplateFactory,
-                                               @Qualifier("messagesExecutor") Executor messagesExecutor,
-                                               StreamingProperties properties, ObjectMapper objectMapper,
-                                               OutboxMetrics outboxMetrics,
-                                               OutboxMessageStatusService outboxMessageStatusService) {
-        return new EventOrientedOutboxProcessorImpl(outboxQueue, kafkaTemplateFactory, messagesExecutor, properties, objectMapper, outboxMetrics, outboxMessageStatusService);
+    @ConditionalOnMissingBean(ScheduledOutboxProcessor.class)
+    public AbstractOutboxProcessor eventOrientedOutboxProcessor(OutboxMessageQueue outboxQueue,
+                                                                KafkaTemplateFactory kafkaTemplateFactory,
+                                                                @Qualifier("messagesExecutor") Executor messagesExecutor,
+                                                                StreamingProperties properties,
+                                                                ObjectMapper objectMapper, OutboxMetrics outboxMetrics,
+                                                                OutboxMessageStatusService statusService) {
+        return new EventOrientedOutboxProcessorImpl(outboxQueue, objectMapper, statusService, kafkaTemplateFactory,
+                messagesExecutor, properties, outboxMetrics);
     }
 
     @Bean
-    public OutboxRecoveryService startupOutboxRecoveryService(OutboxMessageRepository repository,
-                                                              OutboxMessageQueue queue,
-                                                              StreamingProperties properties) {
+    @ConditionalOnProperty(
+            value = {"streaming.outbox.scheduled.enabled"},
+            havingValue = "true",
+            matchIfMissing = true)
+    public AbstractOutboxProcessor scheduledOutboxProcessor(OutboxMessageQueue outboxQueue,
+                                                            KafkaTemplateFactory kafkaTemplateFactory,
+                                                            @Qualifier("messagesExecutor") Executor messagesExecutor,
+                                                            StreamingProperties properties, ObjectMapper objectMapper,
+                                                            OutboxMetrics outboxMetrics,
+                                                            OutboxMessageStatusService statusService,
+                                                            OutboxMessageRepository repository) {
+        return new ScheduledOutboxProcessor(objectMapper, statusService, kafkaTemplateFactory, messagesExecutor,
+                properties, outboxMetrics, repository);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ScheduledOutboxProcessor.class)
+    public StartupOutboxRecoveryService startupOutboxRecoveryService(OutboxMessageRepository repository,
+                                                                     OutboxMessageQueue queue,
+                                                                     StreamingProperties properties) {
         return new StartupOutboxRecoveryService(properties, repository, queue);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ScheduledOutboxProcessor.class)
+    public ScheduledOutboxRecoveryService scheduledOutboxRecoveryService(OutboxMessageRepository repository,
+                                                                         OutboxMessageQueue queue,
+                                                                         StreamingProperties properties) {
+        return new ScheduledOutboxRecoveryService(properties, repository, queue);
     }
 
     @Bean
