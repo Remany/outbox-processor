@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "ru.romanov"
-version = "1.0.23"
+version = "1.0.31"
 
 repositories {
     mavenLocal()
@@ -14,7 +14,7 @@ repositories {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(24)
     }
 }
 
@@ -25,14 +25,14 @@ dependencies {
     api("org.springframework.kafka:spring-kafka:3.2.4")
     api("io.micrometer:micrometer-core:1.14.3")
     api("io.micrometer:micrometer-registry-prometheus:1.14.3")
-    compileOnly("org.projectlombok:lombok:1.18.34")
+    compileOnly("org.projectlombok:lombok:1.18.42")
     runtimeOnly("org.postgresql:postgresql:42.7.3")
-    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:3.5.6")
     testImplementation("org.springframework.boot:spring-boot-starter-test:3.5.6")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
-    testCompileOnly("org.projectlombok:lombok:1.18.34")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
+    testCompileOnly("org.projectlombok:lombok:1.18.42")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
 }
 
 tasks.test {
@@ -84,7 +84,7 @@ publishing {
                 artifact(jarFile)
                 groupId = "ru.romanov"
                 artifactId = jarBaseName
-                version = "1.0.23"
+                version = "1.0.31"
 
                 pom.withXml {
                     asNode().children().clear()
@@ -149,7 +149,7 @@ fun getResolvedVersion(dep: ModuleDependency): String {
     return when {
         dep.version != null -> dep.version!!
         dep.name.contains("spring-boot") -> "3.5.6"
-        dep.name.contains("lombok") -> "1.18.34"
+        dep.name.contains("lombok") -> "1.18.42"
         dep.name.contains("postgresql") -> "42.7.3"
         dep.name.contains("kafka") -> "3.2.4"
         dep.name.contains("micrometer") -> "1.14.3"

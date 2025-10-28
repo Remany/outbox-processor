@@ -33,7 +33,6 @@ public class OutboxMessageStatusServiceImpl implements OutboxMessageStatusServic
 
     private final Counter successfulFlushes;
     private final Counter failedFlushes;
-    private final Gauge queueSizeGauge;
     private final Timer flushTimer;
 
     public OutboxMessageStatusServiceImpl(OutboxMessageRepository outboxRepository, StreamingProperties properties,
@@ -54,11 +53,12 @@ public class OutboxMessageStatusServiceImpl implements OutboxMessageStatusServic
         this.flushTimer = Timer.builder("outbox_status_updater_flush_latency_seconds")
                 .description("The time of the status update batch")
                 .register(meterRegistry);
-        this.queueSizeGauge = Gauge.builder("outbox_status_updater_queue_size", queue, Collection::size)
+        Gauge.builder("outbox_status_updater_queue_size", queue, Collection::size)
                 .description("Current size of the status update queue")
                 .register(meterRegistry);
 
-        scheduler.scheduleAtFixedRate(this::flushIfNeeded, this.properties.getFlushIntervalMs(), this.properties.getFlushIntervalMs(), TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this::flushIfNeeded, this.properties.getFlushIntervalMs(),
+                this.properties.getFlushIntervalMs(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -73,7 +73,8 @@ public class OutboxMessageStatusServiceImpl implements OutboxMessageStatusServic
 
     private void add(MessageRef ref, OutboxMessageStatus status) {
         if (queue.size() >= properties.getMaxQueueSize()) {
-            log.warn("Очередь обновления статусов переполнена: [{}] элементов, сообщение [{}] отбрасывается", queue.size(), ref.id());
+            log.warn("Очередь обновления статусов переполнена: [{}] элементов, сообщение [{}] отбрасывается",
+                    queue.size(), ref.id());
             return;
         }
         queue.add(UpdateEntry.of(ref, status));
@@ -106,7 +107,8 @@ public class OutboxMessageStatusServiceImpl implements OutboxMessageStatusServic
                 return;
             } catch (Exception e) {
                 attempts++;
-                log.warn("Ошибка при обновлении статусов (попытка [{}] из [{}]) — [{}]", attempts, properties.getMaxRetries(), e.getMessage());
+                log.warn("Ошибка при обновлении статусов (попытка [{}] из [{}]) — [{}]", attempts,
+                        properties.getMaxRetries(), e.getMessage());
                 if (attempts < properties.getMaxRetries()) {
                     try {
                         Thread.sleep(properties.getRetryDelayMs());

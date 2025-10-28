@@ -14,6 +14,8 @@ import ru.romanov.outbox.service.OutboxMessageStatusService;
 import ru.romanov.outbox.storage.MessageRef;
 import ru.romanov.outbox.storage.OutboxMessageQueue;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
@@ -55,12 +57,17 @@ public class EventOrientedOutboxProcessorImpl extends AbstractOutboxProcessor {
                 final String key = message.getKey();
                 final String kafkaSystem = message.getKafkaSystem();
                 final String topic = message.getTopic();
+                final LocalDateTime createTime = message.getCreateTime();
 
                 KafkaTemplate<String, String> producer = kafkaTemplateFactory.resolveKafkaTemplate(kafkaSystem);
 
                 ProducerRecord<String, String> record = createRecord(message);
 
                 outboxMetrics.messagePublicationAttempted(kafkaSystem, topic);
+
+                final long createdAtMillis = createTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                outboxMetrics.recordStoredToAttemptedLatency(createdAtMillis);
+
                 long startTime = System.currentTimeMillis();
 
                 producer.send(record).whenCompleteAsync((result, ex) -> {

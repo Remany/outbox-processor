@@ -25,6 +25,8 @@ public class StreamingProperties {
 
         private boolean streamingEnabled = true;
 
+        private boolean virtualThreadsEnabled = true;
+
         private String tableName;
 
         private String sourceId;

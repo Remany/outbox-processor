@@ -68,12 +68,13 @@ public class OutboxMessageServiceImpl implements OutboxMessageService {
             /* Сохраняем сообщение в БД и после коммита транзакции помещаем сообщение в очередь воркеров */
             repository.save(message);
             outboxMetrics.messageStored();
-            if (streamingProperties.getOutbox().isStreamingEnabled()) {
+            final var outboxProps = streamingProperties.getOutbox();
+            if (outboxProps.isStreamingEnabled() && !outboxProps.getScheduled().isEnabled()) {
                 outboxQueue.addAfterTxCommit(message);
             }
         } catch (Exception e) {
-            log.error("Ошибка сохранения сообщения [{}] в таблицу [{}]", data.getClass()
-                    .getSimpleName(), streamingProperties.getOutbox().getTableName(), e);
+            log.error("Ошибка сохранения сообщения [{}] в таблицу [{}]", data.getClass().getSimpleName(),
+                    streamingProperties.getOutbox().getTableName(), e);
         }
     }
 }

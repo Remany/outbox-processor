@@ -37,6 +37,8 @@ import ru.romanov.outbox.storage.impl.OutboxMessageQueueImpl;
 
 import javax.sql.DataSource;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Configuration
 @ConditionalOnProperty(
@@ -52,7 +54,20 @@ public class StreamingAutoConfiguration {
         return new OutboxMessageQueueImpl();
     }
 
+    @Bean(destroyMethod = "close")
+    @ConditionalOnProperty(
+            value = {"streaming.virtual-threads-enabled"},
+            havingValue = "true",
+            matchIfMissing = true)
+    public ExecutorService virtualMessagesExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
+
     @Bean
+    @ConditionalOnProperty(
+            value = {"streaming.virtual-threads-enabled"},
+            havingValue = "false",
+            matchIfMissing = true)
     public Executor messagesExecutor(StreamingProperties properties) {
         final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         final int concurrency = properties.getOutbox().getConcurrency();

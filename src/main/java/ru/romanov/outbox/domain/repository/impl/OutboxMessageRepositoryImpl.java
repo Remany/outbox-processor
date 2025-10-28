@@ -28,9 +28,9 @@ public class OutboxMessageRepositoryImpl implements OutboxMessageRepository {
 
     private static final String DELETE_PROCESSED_MESSAGES_SQL = "DELETE FROM %s " + "WHERE id IN(" + "SELECT id FROM %s " + "WHERE create_time < CURRENT_DATE - :daysInterval " + "AND status = 'SUCCESS' LIMIT :limit FOR UPDATE SKIP LOCKED)";
 
-    private static final String SELECT_NEW_MESSAGES_SQL = "SELECT * FROM %s " + "WHERE status IN (:statuses) " + "LIMIT :limit " + "FOR UPDATE SKIP LOCKED";
+    private static final String SELECT_NEW_MESSAGES_SQL = "SELECT * FROM %s " + "WHERE status IN (:statuses) " + "ORDER BY create_time LIMIT :limit " + "FOR UPDATE SKIP LOCKED";
 
-    private static final String SELECT_STUCK_MESSAGES_SQL = "SELECT * FROM %s " + "WHERE status IN (:statuses) " + "AND reserved_to < :reserved_to " + "LIMIT :limit " + "FOR UPDATE SKIP LOCKED";
+    private static final String SELECT_STUCK_MESSAGES_SQL = "SELECT * FROM %s " + "WHERE status IN (:statuses) " + "AND reserved_to < :reserved_to " + "ORDER BY create_time LIMIT :limit " + "FOR UPDATE SKIP LOCKED";
 
     private static final String ID_PARAM = "id";
     private static final String IDS_PARAM = "ids";
