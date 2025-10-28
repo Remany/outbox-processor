@@ -1,6 +1,5 @@
 package ru.romanov.outbox.storage;
 
-import ru.romanov.outbox.domain.enums.OutboxMessageStatus;
 import ru.romanov.outbox.domain.model.OutboxMessageEntity;
 
 public interface OutboxMessageQueue {
@@ -8,6 +7,5 @@ public interface OutboxMessageQueue {
 
     void addAfterTxCommit(OutboxMessageEntity message);
 
-    OutboxMessageEntity take(OutboxMessageStatus status) throws InterruptedException;
-
+    OutboxMessageEntity take() throws InterruptedException;
 }

@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import ru.romanov.outbox.domain.enums.OutboxMessageStatus;
 import ru.romanov.outbox.domain.model.OutboxMessageEntity;
 import ru.romanov.outbox.storage.OutboxMessageQueue;
 
@@ -40,7 +39,7 @@ public class OutboxMessageQueueImpl implements OutboxMessageQueue {
     }
 
     @Override
-    public OutboxMessageEntity take(OutboxMessageStatus status) throws InterruptedException {
+    public OutboxMessageEntity take() throws InterruptedException {
         return newMessages.take();
     }
 }

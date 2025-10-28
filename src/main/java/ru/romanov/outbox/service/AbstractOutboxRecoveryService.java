@@ -10,7 +10,7 @@ import ru.romanov.outbox.storage.UpdateEntry;
 import java.time.LocalDateTime;
 
 @RequiredArgsConstructor
-public abstract class OutboxRecoveryService {
+public abstract class AbstractOutboxRecoveryService {
 
     private final StreamingProperties properties;
     private final OutboxMessageRepository repository;

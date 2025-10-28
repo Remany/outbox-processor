@@ -19,6 +19,7 @@ public class OutboxMetrics {
     private final Counter publicationErrorsTotal;
 
     private final Timer publicationLatency;
+    private final Timer storedToAttemptLatency;
 
     private final AtomicInteger pendingEventsGauge = new AtomicInteger(0);
 
@@ -43,6 +44,12 @@ public class OutboxMetrics {
 
         this.publicationLatency = Timer.builder("outbox_kafka_publication_latency_seconds")
                 .description("Kafka publication latency in seconds")
+                .publishPercentiles(0.5, 0.95, 0.99)
+                .publishPercentileHistogram()
+                .register(registry);
+
+        this.storedToAttemptLatency = Timer.builder("outbox_stored_to_attempt_latency_seconds")
+                .description("Latency from storing event to attempt Kafka publication")
                 .publishPercentiles(0.5, 0.95, 0.99)
                 .publishPercentileHistogram()
                 .register(registry);
@@ -93,6 +100,12 @@ public class OutboxMetrics {
                 .tag("errorType", safe(errorType))
                 .register(registry)
                 .increment();
+    }
+
+    public void recordStoredToAttemptedLatency(long createdTimeMillis) {
+        long now = System.currentTimeMillis();
+        long duration = now - createdTimeMillis;
+        storedToAttemptLatency.record(duration, TimeUnit.MILLISECONDS);
     }
 
     private String safe(String tagValue) {

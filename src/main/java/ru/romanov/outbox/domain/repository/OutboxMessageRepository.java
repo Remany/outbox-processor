@@ -10,6 +10,8 @@ public interface OutboxMessageRepository {
 
     void updateStatuses(List<UpdateEntry> batch);
 
+    List<OutboxMessageEntity> findNewMessages(Integer limit);
+
     List<OutboxMessageEntity> findStuckMessages(Integer limit);
 
     void deleteProcessedMessages(Integer retentionDate, Integer limit);
