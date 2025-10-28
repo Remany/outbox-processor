@@ -1,11 +1,18 @@
 package ru.romanov.outbox.domain.repository;
 
 import ru.romanov.outbox.domain.model.OutboxMessageEntity;
+import ru.romanov.outbox.storage.UpdateEntry;
 
-import java.util.Set;
+import java.util.List;
 
 public interface OutboxMessageRepository {
     OutboxMessageEntity save(OutboxMessageEntity outboxMessageEntity);
 
-    Set<OutboxMessageEntity> findStuckMessagesEntity(int limit);
+    void updateStatuses(List<UpdateEntry> batch);
+
+    List<OutboxMessageEntity> findNewMessages(Integer limit);
+
+    List<OutboxMessageEntity> findStuckMessages(Integer limit);
+
+    void deleteProcessedMessages(Integer retentionDate, Integer limit);
 }
